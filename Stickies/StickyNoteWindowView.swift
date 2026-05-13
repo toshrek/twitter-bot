@@ -44,21 +44,36 @@ private struct StickyNoteEditor: View {
             }
             .padding()
         }
-        .background(FloatingWindowConfigurer())
+        .background(WindowLevelManager())
     }
 }
 
-private struct FloatingWindowConfigurer: NSViewRepresentable {
+private struct WindowLevelManager: NSViewRepresentable {
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
         DispatchQueue.main.async {
             guard let window = view.window else { return }
-            window.level = .floating
             window.titlebarAppearsTransparent = true
             window.styleMask.insert(.fullSizeContentView)
+            window.level = .floating
+            window.delegate = context.coordinator
         }
         return view
     }
+
     func updateNSView(_ nsView: NSView, context: Context) {}
+
+    class Coordinator: NSObject, NSWindowDelegate {
+        // フォーカス時: 最前面
+        func windowDidBecomeKey(_ notification: Notification) {
+            (notification.object as? NSWindow)?.level = .floating
+        }
+        // 非フォーカス時: 通常ウィンドウより背面・デスクトップより前面
+        func windowDidResignKey(_ notification: Notification) {
+            (notification.object as? NSWindow)?.level = NSWindow.Level(rawValue: NSWindow.Level.normal.rawValue - 1)
+        }
+    }
 }
 #endif
