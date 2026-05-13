@@ -43,6 +43,9 @@ struct ContentView: View {
             }
             .sheet(item: $selectedNote) { note in
                 NoteEditorView(note: note)
+#if os(macOS)
+                    .frame(minWidth: 440, minHeight: 360)
+#endif
             }
         }
     }
@@ -129,6 +132,7 @@ struct NoteEditorView: View {
                 Divider().padding(.vertical, 8)
 
                 TextEditor(text: $note.body)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.horizontal, 8)
                     .onChange(of: note.body) { _, _ in note.updatedAt = Date() }
             }
