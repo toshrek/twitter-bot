@@ -9,14 +9,16 @@ import SwiftUI
 
 @Model
 final class Note {
-    var id: UUID
-    var title: String
-    var body: String
-    var colorName: String
-    var fontSize: Double?  // optional allows automatic migration from older schema
-    var createdAt: Date
-    var updatedAt: Date
+    var id: UUID?
+    var title: String?
+    var body: String?
+    var colorName: String?
+    var fontSize: Double?
+    var createdAt: Date?
+    var updatedAt: Date?
 
+    var displayTitle: String { title ?? "" }
+    var displayBody: String { body ?? "" }
     var displayFontSize: Double { fontSize ?? 16 }
 
     init(title: String = "", body: String = "", colorName: String = "yellow", fontSize: Double = 16) {
