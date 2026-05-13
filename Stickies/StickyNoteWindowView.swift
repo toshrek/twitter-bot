@@ -27,20 +27,23 @@ private struct StickyNoteEditor: View {
     var body: some View {
         ZStack {
             note.color.opacity(0.88).ignoresSafeArea()
-
             VStack(alignment: .leading, spacing: 4) {
-                TextField("タイトル", text: $note.title)
-                    .font(.system(size: note.displayFontSize + 4, weight: .bold))
-                    .textFieldStyle(.plain)
-                    .onChange(of: note.title) { _, _ in note.updatedAt = Date() }
+                TextField("タイトル", text: Binding(
+                    get: { note.displayTitle },
+                    set: { note.title = $0; note.updatedAt = Date() }
+                ))
+                .font(.system(size: note.displayFontSize + 4, weight: .bold))
+                .textFieldStyle(.plain)
 
                 Divider().opacity(0.4)
 
-                TextEditor(text: $note.body)
-                    .font(.system(size: note.displayFontSize))
-                    .scrollContentBackground(.hidden)
-                    .background(.clear)
-                    .onChange(of: note.body) { _, _ in note.updatedAt = Date() }
+                TextEditor(text: Binding(
+                    get: { note.displayBody },
+                    set: { note.body = $0; note.updatedAt = Date() }
+                ))
+                .font(.system(size: note.displayFontSize))
+                .scrollContentBackground(.hidden)
+                .background(.clear)
             }
             .padding()
         }
@@ -66,11 +69,9 @@ private struct WindowLevelManager: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {}
 
     class Coordinator: NSObject, NSWindowDelegate {
-        // フォーカス時: 最前面
         func windowDidBecomeKey(_ notification: Notification) {
             (notification.object as? NSWindow)?.level = .floating
         }
-        // 非フォーカス時: 通常ウィンドウより背面・デスクトップより前面
         func windowDidResignKey(_ notification: Notification) {
             (notification.object as? NSWindow)?.level = NSWindow.Level(rawValue: NSWindow.Level.normal.rawValue - 1)
         }
