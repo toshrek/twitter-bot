@@ -64,16 +64,16 @@ struct NoteCard: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             VStack(alignment: .leading, spacing: 6) {
-                if !note.title.isEmpty {
-                    Text(note.title)
+                if !note.displayTitle.isEmpty {
+                    Text(note.displayTitle)
                         .font(.headline)
                         .lineLimit(2)
                         .padding(.trailing, 28)
                 }
-                Text(note.body.isEmpty ? "タップして編集" : note.body)
+                Text(note.displayBody.isEmpty ? "タップして編集" : note.displayBody)
                     .font(.body)
                     .lineLimit(6)
-                    .foregroundStyle(note.body.isEmpty ? .secondary : .primary)
+                    .foregroundStyle(note.displayBody.isEmpty ? .secondary : .primary)
                 Spacer()
             }
             .padding(12)
@@ -85,7 +85,7 @@ struct NoteCard: View {
 
             #if os(macOS)
             Button {
-                openWindow(id: "sticky-note", value: note.id)
+                if let id = note.id { openWindow(id: "sticky-note", value: id) }
             } label: {
                 Image(systemName: "macwindow.on.rectangle")
                     .font(.caption)
@@ -98,6 +98,13 @@ struct NoteCard: View {
             .help("デスクトップに表示")
             #endif
         }
+        #if os(macOS)
+        .contextMenu {
+            Button("デスクトップに表示") {
+                if let id = note.id { openWindow(id: "sticky-note", value: id) }
+            }
+        }
+        #endif
     }
 }
 
@@ -108,19 +115,11 @@ struct NoteEditorView: View {
     @Environment(\.openWindow) private var openWindow
 
     let colorOptions: [(String, Color)] = [
-        ("yellow", .yellow),
-        ("orange", .orange),
-        ("pink",   .pink),
-        ("green",  .green),
-        ("blue",   .blue),
-        ("purple", .purple),
+        ("yellow", .yellow), ("orange", .orange), ("pink", .pink),
+        ("green", .green), ("blue", .blue), ("purple", .purple),
     ]
-
     let fontSizes: [(String, Double)] = [
-        ("小", 12),
-        ("中", 16),
-        ("大", 20),
-        ("特大", 24),
+        ("小", 12), ("中", 16), ("大", 20), ("特大", 24),
     ]
 
     var body: some View {
@@ -131,52 +130,44 @@ struct NoteEditorView: View {
                         Circle()
                             .fill(color)
                             .frame(width: 30, height: 30)
-                            .overlay(
-                                Circle().stroke(Color.primary.opacity(0.6), lineWidth: note.colorName == name ? 3 : 0)
-                            )
-                            .onTapGesture {
-                                note.colorName = name
-                                note.updatedAt = Date()
-                            }
+                            .overlay(Circle().stroke(Color.primary.opacity(0.6),
+                                lineWidth: note.colorName == name ? 3 : 0))
+                            .onTapGesture { note.colorName = name; note.updatedAt = Date() }
                     }
                     Spacer()
                 }
-                .padding(.horizontal)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
+                .padding(.horizontal).padding(.top, 12).padding(.bottom, 8)
 
                 HStack {
-                    Text("文字サイズ")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text("文字サイズ").font(.caption).foregroundStyle(.secondary)
                     Picker("", selection: Binding(
                         get: { note.displayFontSize },
                         set: { note.fontSize = $0; note.updatedAt = Date() }
                     )) {
-                        ForEach(fontSizes, id: \.1) { label, size in
-                            Text(label).tag(size)
-                        }
+                        ForEach(fontSizes, id: \.1) { Text($0.0).tag($0.1) }
                     }
                     .pickerStyle(.segmented)
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 10)
+                .padding(.horizontal).padding(.bottom, 10)
 
                 Divider()
 
-                TextField("タイトル", text: $note.title)
-                    .font(.system(size: note.displayFontSize + 4, weight: .bold))
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .onChange(of: note.title) { _, _ in note.updatedAt = Date() }
+                TextField("タイトル", text: Binding(
+                    get: { note.displayTitle },
+                    set: { note.title = $0; note.updatedAt = Date() }
+                ))
+                .font(.system(size: note.displayFontSize + 4, weight: .bold))
+                .padding(.horizontal).padding(.top, 8)
 
                 Divider().padding(.vertical, 8)
 
-                TextEditor(text: $note.body)
-                    .font(.system(size: note.displayFontSize))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.horizontal, 8)
-                    .onChange(of: note.body) { _, _ in note.updatedAt = Date() }
+                TextEditor(text: Binding(
+                    get: { note.displayBody },
+                    set: { note.body = $0; note.updatedAt = Date() }
+                ))
+                .font(.system(size: note.displayFontSize))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 8)
             }
             .background(note.color.opacity(0.25).ignoresSafeArea())
             .navigationTitle("メモを編集")
@@ -186,16 +177,13 @@ struct NoteEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("削除", role: .destructive) {
-                        modelContext.delete(note)
-                        dismiss()
-                    }
-                    .foregroundStyle(.red)
+                        modelContext.delete(note); dismiss()
+                    }.foregroundStyle(.red)
                 }
 #if os(macOS)
                 ToolbarItem {
                     Button {
-                        openWindow(id: "sticky-note", value: note.id)
-                        dismiss()
+                        if let id = note.id { openWindow(id: "sticky-note", value: id); dismiss() }
                     } label: {
                         Label("デスクトップに表示", systemImage: "macwindow.on.rectangle")
                     }
