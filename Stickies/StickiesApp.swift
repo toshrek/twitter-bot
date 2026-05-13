@@ -27,5 +27,16 @@ struct StickiesApp: App {
             ContentView()
         }
         .modelContainer(sharedModelContainer)
+
+        #if os(macOS)
+        WindowGroup(id: "sticky-note", for: UUID.self) { $noteID in
+            if let noteID {
+                StickyNoteWindowView(noteID: noteID)
+            }
+        }
+        .modelContainer(sharedModelContainer)
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 220, height: 220)
+        #endif
     }
 }

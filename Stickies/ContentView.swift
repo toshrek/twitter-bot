@@ -56,6 +56,7 @@ struct ContentView: View {
 
 struct NoteCard: View {
     let note: Note
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -76,6 +77,13 @@ struct NoteCard: View {
         .background(note.color.opacity(0.7))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .shadow(radius: 2, y: 1)
+        #if os(macOS)
+        .contextMenu {
+            Button("デスクトップに表示") {
+                openWindow(id: "sticky-note", value: note.id)
+            }
+        }
+        #endif
     }
 }
 
