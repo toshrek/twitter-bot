@@ -2,8 +2,6 @@
 //  StickiesApp.swift
 //  Stickies
 //
-//  Created by 鈴木俊孝 on 2026/05/13.
-//
 
 import SwiftUI
 import SwiftData
@@ -11,11 +9,12 @@ import SwiftData
 @main
 struct StickiesApp: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+        let schema = Schema([Note.self])
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
+        )
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {

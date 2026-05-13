@@ -2,79 +2,148 @@
 //  ContentView.swift
 //  Stickies
 //
-//  Created by 鈴木俊孝 on 2026/05/13.
-//
 
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query(sort: \Note.updatedAt, order: .reverse) private var notes: [Note]
+    @State private var selectedNote: Note?
+
+    let columns = [GridItem(.adaptive(minimum: 160), spacing: 12)]
 
     var body: some View {
-        NavigationViewWrapper {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        NavigationStack {
+            ScrollView {
+                if notes.isEmpty {
+                    ContentUnavailableView(
+                        "メモがありません",
+                        systemImage: "note.text",
+                        description: Text("+ボタンでメモを追加しましょう")
+                    )
+                    .padding(.top, 80)
+                } else {
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(notes) { note in
+                            NoteCard(note: note)
+                                .onTapGesture { selectedNote = note }
+                        }
                     }
+                    .padding()
                 }
-                .onDelete(perform: deleteItems)
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
+            .navigationTitle("Stickies")
             .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: addNote) {
+                        Label("メモを追加", systemImage: "plus")
                     }
                 }
             }
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            .sheet(item: $selectedNote) { note in
+                NoteEditorView(note: note)
             }
         }
+    }
+
+    private func addNote() {
+        let note = Note()
+        modelContext.insert(note)
+        selectedNote = note
     }
 }
 
-fileprivate struct NavigationViewWrapper<Content: View>: View {
-    let content: () -> Content
+struct NoteCard: View {
+    let note: Note
 
     var body: some View {
-#if os(macOS)
-        NavigationSplitView {
-            content()
-        } detail: {
-            Text("Select an item")
+        VStack(alignment: .leading, spacing: 6) {
+            if !note.title.isEmpty {
+                Text(note.title)
+                    .font(.headline)
+                    .lineLimit(2)
+            }
+            Text(note.body.isEmpty ? "タップして編集" : note.body)
+                .font(.body)
+                .lineLimit(6)
+                .foregroundStyle(note.body.isEmpty ? .secondary : .primary)
+            Spacer()
         }
-#else
-        content()
-#endif
+        .padding(12)
+        .frame(minHeight: 120)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(note.color.opacity(0.7))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .shadow(radius: 2, y: 1)
+    }
+}
+
+struct NoteEditorView: View {
+    @Bindable var note: Note
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+
+    let colorOptions: [(String, Color)] = [
+        ("yellow", .yellow),
+        ("orange", .orange),
+        ("pink",   .pink),
+        ("green",  .green),
+        ("blue",   .blue),
+        ("purple", .purple),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                HStack(spacing: 10) {
+                    ForEach(colorOptions, id: \.0) { name, color in
+                        Circle()
+                            .fill(color)
+                            .frame(width: 30, height: 30)
+                            .overlay(
+                                Circle().stroke(Color.primary.opacity(0.6), lineWidth: note.colorName == name ? 3 : 0)
+                            )
+                            .onTapGesture {
+                                note.colorName = name
+                                note.updatedAt = Date()
+                            }
+                    }
+                    Spacer()
+                }
+                .padding()
+
+                TextField("タイトル", text: $note.title)
+                    .font(.title2.bold())
+                    .padding(.horizontal)
+                    .onChange(of: note.title) { _, _ in note.updatedAt = Date() }
+
+                Divider().padding(.vertical, 8)
+
+                TextEditor(text: $note.body)
+                    .padding(.horizontal, 8)
+                    .onChange(of: note.body) { _, _ in note.updatedAt = Date() }
+            }
+            .background(note.color.opacity(0.25).ignoresSafeArea())
+            .navigationTitle("メモを編集")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("削除", role: .destructive) {
+                        modelContext.delete(note)
+                        dismiss()
+                    }
+                    .foregroundStyle(.red)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完了") { dismiss() }
+                }
+            }
+        }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: Note.self, inMemory: true)
 }
