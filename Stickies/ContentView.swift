@@ -126,7 +126,9 @@ struct NoteEditorView: View {
             }
             .background(note.color.opacity(0.25).ignoresSafeArea())
             .navigationTitle("メモを編集")
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("削除", role: .destructive) {
