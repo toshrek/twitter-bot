@@ -21,10 +21,10 @@ struct StickyNoteWindowView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     if !note.title.isEmpty {
                         Text(note.title)
-                            .font(.headline)
+                            .font(.system(size: note.fontSize + 4, weight: .bold))
                     }
                     Text(note.body)
-                        .font(.body)
+                        .font(.system(size: note.fontSize))
                     Spacer()
                 }
                 .padding()

@@ -13,14 +13,16 @@ final class Note {
     var title: String
     var body: String
     var colorName: String
+    var fontSize: Double
     var createdAt: Date
     var updatedAt: Date
 
-    init(title: String = "", body: String = "", colorName: String = "yellow") {
+    init(title: String = "", body: String = "", colorName: String = "yellow", fontSize: Double = 16) {
         self.id = UUID()
         self.title = title
         self.body = body
         self.colorName = colorName
+        self.fontSize = fontSize
         self.createdAt = Date()
         self.updatedAt = Date()
     }

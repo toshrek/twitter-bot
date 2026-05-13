@@ -44,7 +44,7 @@ struct ContentView: View {
             .sheet(item: $selectedNote) { note in
                 NoteEditorView(note: note)
 #if os(macOS)
-                    .frame(minWidth: 440, minHeight: 360)
+                    .frame(minWidth: 440, minHeight: 400)
 #endif
             }
         }
@@ -104,9 +104,17 @@ struct NoteEditorView: View {
         ("purple", .purple),
     ]
 
+    let fontSizes: [(String, Double)] = [
+        ("小", 12),
+        ("中", 16),
+        ("大", 20),
+        ("特大", 24),
+    ]
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // 色選択
                 HStack(spacing: 10) {
                     ForEach(colorOptions, id: \.0) { name, color in
                         Circle()
@@ -122,16 +130,38 @@ struct NoteEditorView: View {
                     }
                     Spacer()
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+                // 文字サイズ
+                HStack {
+                    Text("文字サイズ")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Picker("", selection: $note.fontSize) {
+                        ForEach(fontSizes, id: \.1) { label, size in
+                            Text(label).tag(size)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: note.fontSize) { _, _ in note.updatedAt = Date() }
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 10)
+
+                Divider()
 
                 TextField("タイトル", text: $note.title)
-                    .font(.title2.bold())
+                    .font(.system(size: note.fontSize + 4, weight: .bold))
                     .padding(.horizontal)
+                    .padding(.top, 8)
                     .onChange(of: note.title) { _, _ in note.updatedAt = Date() }
 
                 Divider().padding(.vertical, 8)
 
                 TextEditor(text: $note.body)
+                    .font(.system(size: note.fontSize))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.horizontal, 8)
                     .onChange(of: note.body) { _, _ in note.updatedAt = Date() }
