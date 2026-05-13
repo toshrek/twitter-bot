@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -54,6 +55,7 @@ struct ContentView: View {
         let note = Note()
         modelContext.insert(note)
         selectedNote = note
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 
@@ -177,7 +179,9 @@ struct NoteEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("削除", role: .destructive) {
-                        modelContext.delete(note); dismiss()
+                        modelContext.delete(note)
+                        WidgetCenter.shared.reloadAllTimelines()
+                        dismiss()
                     }.foregroundStyle(.red)
                 }
 #if os(macOS)
@@ -190,7 +194,10 @@ struct NoteEditorView: View {
                 }
 #endif
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完了") { dismiss() }
+                    Button("完了") {
+                        WidgetCenter.shared.reloadAllTimelines()
+                        dismiss()
+                    }
                 }
             }
         }
