@@ -62,31 +62,42 @@ struct NoteCard: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if !note.title.isEmpty {
-                Text(note.title)
-                    .font(.headline)
-                    .lineLimit(2)
+        ZStack(alignment: .topTrailing) {
+            VStack(alignment: .leading, spacing: 6) {
+                if !note.title.isEmpty {
+                    Text(note.title)
+                        .font(.headline)
+                        .lineLimit(2)
+                        .padding(.trailing, 28)
+                }
+                Text(note.body.isEmpty ? "タップして編集" : note.body)
+                    .font(.body)
+                    .lineLimit(6)
+                    .foregroundStyle(note.body.isEmpty ? .secondary : .primary)
+                Spacer()
             }
-            Text(note.body.isEmpty ? "タップして編集" : note.body)
-                .font(.body)
-                .lineLimit(6)
-                .foregroundStyle(note.body.isEmpty ? .secondary : .primary)
-            Spacer()
-        }
-        .padding(12)
-        .frame(minHeight: 120)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(note.color.opacity(0.7))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .shadow(radius: 2, y: 1)
-        #if os(macOS)
-        .contextMenu {
-            Button("デスクトップに表示") {
+            .padding(12)
+            .frame(minHeight: 120)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(note.color.opacity(0.7))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .shadow(radius: 2, y: 1)
+
+            #if os(macOS)
+            Button {
                 openWindow(id: "sticky-note", value: note.id)
+            } label: {
+                Image(systemName: "macwindow.on.rectangle")
+                    .font(.caption)
+                    .padding(5)
+                    .background(.black.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
             }
+            .buttonStyle(.plain)
+            .padding(7)
+            .help("デスクトップに表示")
+            #endif
         }
-        #endif
     }
 }
 
@@ -94,6 +105,7 @@ struct NoteEditorView: View {
     @Bindable var note: Note
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openWindow) private var openWindow
 
     let colorOptions: [(String, Color)] = [
         ("yellow", .yellow),
@@ -179,6 +191,16 @@ struct NoteEditorView: View {
                     }
                     .foregroundStyle(.red)
                 }
+#if os(macOS)
+                ToolbarItem {
+                    Button {
+                        openWindow(id: "sticky-note", value: note.id)
+                        dismiss()
+                    } label: {
+                        Label("デスクトップに表示", systemImage: "macwindow.on.rectangle")
+                    }
+                }
+#endif
                 ToolbarItem(placement: .confirmationAction) {
                     Button("完了") { dismiss() }
                 }
