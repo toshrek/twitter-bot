@@ -15,20 +15,34 @@ struct StickyNoteWindowView: View {
     var note: Note? { notes.first { $0.id == noteID } }
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            if let note {
-                note.color.opacity(0.9).ignoresSafeArea()
-                VStack(alignment: .leading, spacing: 6) {
-                    if !note.title.isEmpty {
-                        Text(note.title)
-                            .font(.system(size: note.displayFontSize + 4, weight: .bold))
-                    }
-                    Text(note.body)
-                        .font(.system(size: note.displayFontSize))
-                    Spacer()
-                }
-                .padding()
+        if let note {
+            StickyNoteEditor(note: note)
+        }
+    }
+}
+
+private struct StickyNoteEditor: View {
+    @Bindable var note: Note
+
+    var body: some View {
+        ZStack {
+            note.color.opacity(0.88).ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 4) {
+                TextField("タイトル", text: $note.title)
+                    .font(.system(size: note.displayFontSize + 4, weight: .bold))
+                    .textFieldStyle(.plain)
+                    .onChange(of: note.title) { _, _ in note.updatedAt = Date() }
+
+                Divider().opacity(0.4)
+
+                TextEditor(text: $note.body)
+                    .font(.system(size: note.displayFontSize))
+                    .scrollContentBackground(.hidden)
+                    .background(.clear)
+                    .onChange(of: note.body) { _, _ in note.updatedAt = Date() }
             }
+            .padding()
         }
         .background(FloatingWindowConfigurer())
     }
