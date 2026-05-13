@@ -114,7 +114,6 @@ struct NoteEditorView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // 色選択
                 HStack(spacing: 10) {
                     ForEach(colorOptions, id: \.0) { name, color in
                         Circle()
@@ -134,18 +133,19 @@ struct NoteEditorView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 8)
 
-                // 文字サイズ
                 HStack {
                     Text("文字サイズ")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Picker("", selection: $note.fontSize) {
+                    Picker("", selection: Binding(
+                        get: { note.displayFontSize },
+                        set: { note.fontSize = $0; note.updatedAt = Date() }
+                    )) {
                         ForEach(fontSizes, id: \.1) { label, size in
                             Text(label).tag(size)
                         }
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: note.fontSize) { _, _ in note.updatedAt = Date() }
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 10)
@@ -153,7 +153,7 @@ struct NoteEditorView: View {
                 Divider()
 
                 TextField("タイトル", text: $note.title)
-                    .font(.system(size: note.fontSize + 4, weight: .bold))
+                    .font(.system(size: note.displayFontSize + 4, weight: .bold))
                     .padding(.horizontal)
                     .padding(.top, 8)
                     .onChange(of: note.title) { _, _ in note.updatedAt = Date() }
@@ -161,7 +161,7 @@ struct NoteEditorView: View {
                 Divider().padding(.vertical, 8)
 
                 TextEditor(text: $note.body)
-                    .font(.system(size: note.fontSize))
+                    .font(.system(size: note.displayFontSize))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.horizontal, 8)
                     .onChange(of: note.body) { _, _ in note.updatedAt = Date() }
